@@ -63,20 +63,40 @@ export default function Alerts() {
       return
     }
 
-    const targetUser = approvedUsers[parseInt(selectedUserIndex, 10)]
-    if (!targetUser) return
-
     try {
       const token = await getToken()
-      const payload = {
-        ...newAlert,
-        userId: targetUser._id,
-        userClerkId: targetUser.clerkId,
+
+      if (selectedUserIndex === 'all') {
+        const promises = approvedUsers.map((user) => {
+          const payload = {
+            ...newAlert,
+            userId: user._id,
+            userClerkId: user.clerkId,
+          }
+          return axios.post('/api/alerts/create', payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        })
+        const responses = await Promise.all(promises)
+        const newCreatedAlerts = responses.map((res) => res.data)
+        setAlerts([...newCreatedAlerts, ...alerts])
+        alert(`Alert broadcasted to all ${approvedUsers.length} approved users successfully!`)
+      } else {
+        const targetUser = approvedUsers[parseInt(selectedUserIndex, 10)]
+        if (!targetUser) return
+
+        const payload = {
+          ...newAlert,
+          userId: targetUser._id,
+          userClerkId: targetUser.clerkId,
+        }
+        const response = await axios.post('/api/alerts/create', payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setAlerts([response.data, ...alerts])
+        alert('Alert created and scheduled successfully!')
       }
-      const response = await axios.post('/api/alerts/create', payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      setAlerts([response.data, ...alerts])
+
       setNewAlert({
         title: '',
         description: '',
@@ -88,7 +108,6 @@ export default function Alerts() {
       })
       setSelectedUserIndex('')
       setShowForm(false)
-      alert('Alert created and scheduled successfully!')
     } catch (error) {
       console.error('Failed to create alert:', error)
       alert('Failed to create alert')
@@ -137,10 +156,13 @@ export default function Alerts() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             >
-              <option value="">-- Select Approved User --</option>
+              <option value="">-- Select Target --</option>
+              {approvedUsers.length > 0 && (
+                <option value="all">📢 All Approved Users (Broadcast)</option>
+              )}
               {approvedUsers.map((user, idx) => (
                 <option key={user._id} value={idx}>
-                  {user.firstName ? `${user.firstName} ${user.lastName}` : user.email} (@{user.telegramUsername})
+                  👤 {user.firstName ? `${user.firstName} ${user.lastName}` : user.email} (@{user.telegramUsername})
                 </option>
               ))}
             </select>

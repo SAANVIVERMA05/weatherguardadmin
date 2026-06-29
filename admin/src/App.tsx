@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, SignOutButton, useUser } from '@clerk/clerk-react'
 import Dashboard from './pages/Dashboard'
 import PendingRequests from './pages/PendingRequests'
 import ApprovedUsers from './pages/ApprovedUsers'
@@ -36,13 +36,20 @@ function LayoutWrapper() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r border-gray-200">
+        <aside className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r border-gray-200 flex flex-col justify-between pb-8">
           <nav className="mt-8 px-4 space-y-2">
             <SidebarLink to="/dashboard" label="📊 Dashboard" />
             <SidebarLink to="/pending-requests" label="📋 Pending Requests" />
             <SidebarLink to="/approved-users" label="✅ Approved Users" />
             <SidebarLink to="/alerts" label="🚨 Alerts" />
           </nav>
+          <div className="px-4">
+            <SignOutButton>
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition">
+                🚪 Log Out
+              </button>
+            </SignOutButton>
+          </div>
         </aside>
 
         {/* Main Content */}

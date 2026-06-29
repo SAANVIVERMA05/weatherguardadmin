@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth, useUser, SignOutButton } from '@clerk/clerk-react'
 import axios from 'axios'
 
 interface AccessRequest {
@@ -142,11 +142,7 @@ export default function UserPortal() {
     )
   }
 
-  const currentRequest = requests[0]
   const status = profile?.status || 'pending'
-
-  // Decide user status: if no requests found, we allow submitting request
-  const hasSubmittedRequest = requests.length > 0
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
@@ -165,132 +161,109 @@ export default function UserPortal() {
             >
               🔄 Refresh
             </button>
+            <SignOutButton>
+              <button className="rounded-lg bg-red-950/40 border border-red-800/60 px-3 py-1.5 text-sm font-medium text-red-400 hover:bg-red-900/40 transition">
+                🚪 Log Out
+              </button>
+            </SignOutButton>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 mt-12">
-        {!hasSubmittedRequest ? (
-          /* REQUEST ACCESS FORM */
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-3xl font-semibold text-white">Request Access</h2>
-              <p className="mt-2 text-slate-400">
-                WeatherGuard is an invite-only service. Submit your request below to gain access to automated Telegram weather alerts.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmitRequest} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Telegram Username
-                </label>
-                <div className="relative rounded-lg shadow-sm">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="text-slate-500">@</span>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={telegramUsername}
-                    onChange={(e) => setTelegramUsername(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-700 bg-slate-900/80 py-3 pl-8 pr-4 text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    placeholder="john_doe"
-                  />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  We use your username to link your chat ID when you talk to the Telegram Bot.
+      <main className="mx-auto max-w-7xl px-6 mt-12 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* LEFT COLUMN: Request Access Form */}
+          <div className="lg:col-span-7">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-white">Request Access</h2>
+                <p className="mt-2 text-slate-400 text-sm">
+                  WeatherGuard is an invite-only service. Submit a request below to link a Telegram account for weather alerts.
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Reason for Access
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={reasonForAccess}
-                  onChange={(e) => setReasonForAccess(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-700 bg-slate-900/80 p-4 text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Tell us why you need weather alerts (e.g. agricultural needs, extreme weather zones, etc.)"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-cyan-500 py-3 font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50"
-              >
-                {submitting ? 'Submitting Request...' : 'Submit Request'}
-              </button>
-            </form>
-          </div>
-        ) : status === 'pending' || currentRequest?.status === 'pending' ? (
-          /* PENDING REVIEW */
-          <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-8 text-center shadow-xl">
-            <span className="text-5xl">⏳</span>
-            <h2 className="mt-4 text-2xl font-bold text-yellow-400">Request Pending Review</h2>
-            <p className="mt-3 text-slate-300 max-w-xl mx-auto">
-              Your access request has been logged. An administrator will review your application shortly.
-            </p>
-
-            <div className="mt-8 border-t border-slate-800 pt-8 max-w-md mx-auto text-left">
-              <h3 className="text-lg font-semibold text-white mb-4">🚀 Next Steps: Link Telegram</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                To receive alerts, you must activate and link your Telegram account:
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-300">
-                <li>Search for the Telegram bot.</li>
-                <li>Start a chat and send the <code className="bg-slate-800 px-1 py-0.5 rounded text-cyan-300">/start</code> command.</li>
-                <li>Your chat ID will be paired automatically using your username <b>@{currentRequest?.telegramUsername}</b>.</li>
-              </ol>
-            </div>
-          </div>
-        ) : status === 'rejected' || currentRequest?.status === 'rejected' ? (
-          /* REJECTED REVIEW */
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center shadow-xl">
-            <span className="text-5xl">❌</span>
-            <h2 className="mt-4 text-2xl font-bold text-red-400">Request Rejected</h2>
-            <p className="mt-3 text-slate-300 max-w-xl mx-auto">
-              Unfortunately, your request for weather alert access was not approved.
-            </p>
-            {currentRequest?.rejectionReason && (
-              <div className="mt-4 rounded-lg bg-red-500/10 p-4 text-red-300 text-sm max-w-md mx-auto">
-                <b>Reason:</b> {currentRequest.rejectionReason}
-              </div>
-            )}
-            <button
-              onClick={() => {
-                setRequests([])
-              }}
-              className="mt-8 rounded-lg bg-slate-800 px-5 py-2 text-sm font-semibold hover:bg-slate-700 transition"
-            >
-              Try Again / Re-apply
-            </button>
-          </div>
-        ) : (
-          /* APPROVED PORTAL DASHBOARD */
-          <div className="space-y-8">
-            <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-8 shadow-xl">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              <form onSubmit={handleSubmitRequest} className="space-y-6">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                    <h2 className="text-2xl font-bold text-white">Alert Subscription Active</h2>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Telegram Username
+                  </label>
+                  <div className="relative rounded-lg shadow-sm">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <span className="text-slate-500">@</span>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={telegramUsername}
+                      onChange={(e) => setTelegramUsername(e.target.value)}
+                      className="block w-full rounded-lg border border-slate-700 bg-slate-900/80 py-3 pl-8 pr-4 text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 text-sm"
+                      placeholder="john_doe"
+                    />
                   </div>
-                  <p className="mt-1 text-slate-400 text-sm">
-                    Linked Telegram username: <span className="text-cyan-400">@{profile?.telegramUsername || currentRequest?.telegramUsername}</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {profile?.telegramChatId 
-                      ? `🟢 Chat ID Linked: ${profile.telegramChatId}`
-                      : '🟡 Telegram Bot chat ID not linked. Send /start to the Telegram Bot to begin receiving alerts!'}
+                  <p className="mt-2 text-xs text-slate-500">
+                    We use your username to link your chat ID when you talk to the Telegram Bot.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 p-2 rounded-xl">
-                  <span className="text-xs font-semibold px-2 text-slate-400">Alerts Toggled:</span>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Reason for Access
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={reasonForAccess}
+                    onChange={(e) => setReasonForAccess(e.target.value)}
+                    className="block w-full rounded-lg border border-slate-700 bg-slate-900/80 p-4 text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 text-sm"
+                    placeholder="Tell us why you need weather alerts (e.g. agricultural needs, extreme weather zones, etc.)"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-lg bg-cyan-500 py-3 font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50 text-sm"
+                >
+                  {submitting ? 'Submitting Request...' : 'Submit Request'}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Active Subscription details (if approved) */}
+          <div className="lg:col-span-5">
+            {status === 'approved' ? (
+              <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-8 shadow-xl h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <h2 className="text-xl font-bold text-white">Alert Subscription Active</h2>
+                  </div>
+                  <div className="space-y-4 text-sm">
+                    <p className="text-slate-300">
+                      Your account status is <span className="text-green-400 font-semibold">Approved</span>. You will receive weather alerts for your linked Telegram accounts.
+                    </p>
+                    <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                      <p className="text-slate-400 text-xs">
+                        Active User: <span className="text-slate-200">@{profile?.telegramUsername}</span>
+                      </p>
+                      <p className="text-slate-400 text-xs">
+                        Chat ID Connection: {profile?.telegramChatId 
+                          ? <span className="text-green-400 font-medium">🟢 Connected ({profile.telegramChatId})</span>
+                          : <span className="text-yellow-400 font-medium">🟡 Waiting for /start command</span>
+                        }
+                      </p>
+                    </div>
+                    {!profile?.telegramChatId && (
+                      <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4 text-xs text-yellow-200">
+                        <b>Telegram Setup:</b> Send <code className="bg-slate-800 px-1 py-0.5 rounded text-cyan-300">/start</code> to the bot on Telegram to complete the setup.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mt-6">
+                  <span className="text-xs font-semibold text-slate-400">Alerts Toggled:</span>
                   {profile?.notificationsEnabled ? (
                     <button
                       onClick={() => handleToggleNotifications(false)}
@@ -308,44 +281,117 @@ export default function UserPortal() {
                   )}
                 </div>
               </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl flex flex-col justify-center items-center text-center h-full min-h-[300px]">
+                <span className="text-5xl mb-4">⏳</span>
+                <h3 className="text-lg font-semibold text-white">Verification Status</h3>
+                <p className="mt-2 text-slate-400 text-sm max-w-xs">
+                  Once your request is approved, your active subscription details and controls will appear here.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* REQUEST HISTORY SECTION */}
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
+          <h3 className="text-xl font-bold text-white mb-6">📋 Sent Requests History</h3>
+
+          {requests.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <p>No access requests submitted yet.</p>
             </div>
-
-            {/* ALERT HISTORY */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
-              <h3 className="text-xl font-bold text-white mb-6">🔔 Your Alert History</h3>
-
-              {alerts.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <p>No weather alerts received yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {alerts.map((alert) => (
-                    <div key={alert._id} className="border-l-4 border-cyan-500 bg-slate-900/60 p-4 rounded-r-lg">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-white">{alert.title}</h4>
-                          <p className="text-slate-300 text-sm mt-1">{alert.description}</p>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                          alert.severity === 'critical' ? 'bg-red-950 text-red-400 border border-red-800' :
-                          alert.severity === 'alert' ? 'bg-orange-950 text-orange-400 border border-orange-800' :
-                          'bg-yellow-950 text-yellow-400 border border-yellow-800'
-                        }`}>
-                          {alert.severity.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex gap-4 text-xs text-slate-500">
-                        {alert.location && <span>📍 {alert.location}</span>}
-                        {alert.temperature !== undefined && <span>🌡️ {alert.temperature}°C</span>}
-                        {alert.condition && <span>☁️ {alert.condition}</span>}
-                        <span>📅 {new Date(alert.sentAt || alert.createdAt).toLocaleString()}</span>
-                      </div>
-                    </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="text-xs uppercase text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Telegram Username</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Submitted Date</th>
+                    <th className="py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {requests.map((req) => (
+                    <tr key={req._id} className="hover:bg-slate-900/30 transition">
+                      <td className="py-4 px-4 font-medium text-white">@{req.telegramUsername}</td>
+                      <td className="py-4 px-4 max-w-xs truncate font-mono text-xs text-slate-400" title={req.reasonForAccess}>
+                        {req.reasonForAccess}
+                      </td>
+                      <td className="py-4 px-4">
+                        {new Date(req.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-4 px-4">
+                        {req.status === 'approved' && (
+                          <span className="inline-flex items-center gap-1 rounded bg-green-500/10 px-2.5 py-1 text-xs font-semibold text-green-400 border border-green-500/20">
+                            ✅ Approved
+                          </span>
+                        )}
+                        {req.status === 'pending' && (
+                          <span className="inline-flex items-center gap-1 rounded bg-yellow-500/10 px-2.5 py-1 text-xs font-semibold text-yellow-400 border border-yellow-500/20">
+                            ⏳ Pending
+                          </span>
+                        )}
+                        {req.status === 'rejected' && (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1 rounded bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-400 border border-red-500/20">
+                              ❌ Rejected
+                            </span>
+                            {req.rejectionReason && (
+                              <p className="text-xs text-red-300/85 italic font-sans">Reason: {req.rejectionReason}</p>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              )}
+                </tbody>
+              </table>
             </div>
+          )}
+        </div>
+
+        {/* ALERT HISTORY SECTION (if approved) */}
+        {status === 'approved' && (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-6">🔔 Your Alert History</h3>
+
+            {alerts.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <p>No weather alerts received yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {alerts.map((alert) => (
+                  <div key={alert._id} className="border-l-4 border-cyan-500 bg-slate-900/60 p-4 rounded-r-lg">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-white">{alert.title}</h4>
+                        <p className="text-slate-300 text-sm mt-1">{alert.description}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        alert.severity === 'critical' ? 'bg-red-950 text-red-400 border border-red-800' :
+                        alert.severity === 'alert' ? 'bg-orange-950 text-orange-400 border border-orange-800' :
+                        'bg-yellow-950 text-yellow-400 border border-yellow-800'
+                      }`}>
+                        {alert.severity.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex gap-4 text-xs text-slate-500">
+                      {alert.location && <span>📍 {alert.location}</span>}
+                      {alert.temperature !== undefined && <span>🌡️ {alert.temperature}°C</span>}
+                      {alert.condition && <span>☁️ {alert.condition}</span>}
+                      <span>📅 {new Date(alert.sentAt || alert.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
