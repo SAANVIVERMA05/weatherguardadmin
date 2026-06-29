@@ -54,7 +54,7 @@ export class AlertsService {
   }
 
   async markAlertAsSent(alertId: string): Promise<Alert> {
-    return this.alertModel.findByIdAndUpdate(
+    const updatedAlert = await this.alertModel.findByIdAndUpdate(
       alertId,
       {
         sent: true,
@@ -63,6 +63,12 @@ export class AlertsService {
       },
       { new: true },
     );
+
+    if (!updatedAlert) {
+      throw new Error('Alert not found');
+    }
+
+    return updatedAlert;
   }
 
   // Run every minute to send pending alerts
@@ -80,11 +86,13 @@ export class AlertsService {
           await this.markAlertAsSent(alert._id.toString());
           this.logger.log(`Alert sent to user ${alert.userClerkId}`);
         } catch (error) {
-          this.logger.error(`Failed to send alert: ${error.message}`);
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          this.logger.error(`Failed to send alert: ${message}`);
         }
       }
     } catch (error) {
-      this.logger.error(`Error in sendPendingAlerts: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error in sendPendingAlerts: ${message}`);
     }
   }
 
