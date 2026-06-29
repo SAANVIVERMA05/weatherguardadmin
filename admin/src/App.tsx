@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { SignedIn, SignedOut, RedirectToSignIn, UserButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
 import Dashboard from './pages/Dashboard'
 import PendingRequests from './pages/PendingRequests'
 import ApprovedUsers from './pages/ApprovedUsers'
@@ -9,9 +9,29 @@ function App() {
   return (
     <Router>
       <SignedOut>
-        <RedirectToSignIn />
+        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
+          <div className="max-w-2xl w-full rounded-2xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur">
+            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300">WeatherGuard Admin</p>
+            <h1 className="text-4xl font-semibold">Secure, invite-only weather alerts</h1>
+            <p className="mt-4 text-lg text-slate-300">
+              Sign in or create an account to review access requests and manage weather alerts.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <SignInButton mode="modal">
+                <button className="rounded-lg bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400">
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="rounded-lg border border-cyan-400 px-5 py-3 font-medium text-cyan-300 transition hover:bg-cyan-500/10">
+                  Sign up
+                </button>
+              </SignUpButton>
+            </div>
+          </div>
+        </div>
       </SignedOut>
-      
+
       <SignedIn>
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
