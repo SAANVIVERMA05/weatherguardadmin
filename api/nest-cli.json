@@ -1,0 +1,12 @@
+{
+  "language": "ts",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "monorepo": false,
+  "root": ".",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "webpackConfigFilename": "webpack.config.js"
+  }
+}

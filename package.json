@@ -1,0 +1,27 @@
+{
+  "name": "weatherguard-admin",
+  "version": "1.0.0",
+  "description": "Secure, invite-only weather alert service with admin dashboard and Telegram integration",
+  "private": true,
+  "scripts": {
+    "api:install": "cd api && npm install",
+    "admin:install": "cd admin && npm install",
+    "api:dev": "cd api && npm run start:dev",
+    "api:build": "cd api && npm run build",
+    "api:prod": "cd api && npm run start:prod",
+    "admin:dev": "cd admin && npm run dev",
+    "admin:build": "cd admin && npm run build",
+    "admin:preview": "cd admin && npm run preview",
+    "install-all": "npm install && npm run api:install && npm run admin:install",
+    "dev": "concurrently \"npm run api:dev\" \"npm run admin:dev\"",
+    "build": "npm run api:build && npm run admin:build"
+  },
+  "workspaces": [
+    "api",
+    "admin"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
