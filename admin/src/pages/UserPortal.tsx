@@ -102,8 +102,13 @@ export default function UserPortal() {
         { headers }
       )
 
-      alert('Access request submitted successfully!')
+      alert('Access request submitted successfully! Opening the Telegram Bot so you can connect your account...')
+      setTelegramUsername('')
+      setReasonForAccess('')
       bootstrapUser()
+
+      const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'WeatherGuardAlertsBot'
+      window.open(`https://t.me/${botUsername}`, '_blank', 'noopener,noreferrer')
     } catch (error) {
       console.error('Failed to submit access request:', error)
       alert('Failed to submit access request.')
@@ -222,9 +227,9 @@ export default function UserPortal() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full rounded-lg bg-cyan-500 py-3 font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50 text-sm"
+                  className="w-full rounded-lg bg-cyan-500 py-3 font-semibold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50 text-sm flex items-center justify-center gap-2"
                 >
-                  {submitting ? 'Submitting Request...' : 'Submit Request'}
+                  {submitting ? 'Submitting Request...' : '💬 Connect Telegram'}
                 </button>
               </form>
             </div>
@@ -253,10 +258,30 @@ export default function UserPortal() {
                           : <span className="text-yellow-400 font-medium">🟡 Waiting for /start command</span>
                         }
                       </p>
+                      <div className="pt-2 border-t border-slate-800/40">
+                        <a
+                          href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'weathergaur_bot'}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 font-semibold underline"
+                        >
+                          💬 Open Telegram Bot Chat
+                        </a>
+                      </div>
                     </div>
                     {!profile?.telegramChatId && (
-                      <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4 text-xs text-yellow-200">
-                        <b>Telegram Setup:</b> Send <code className="bg-slate-800 px-1 py-0.5 rounded text-cyan-300">/start</code> to the bot on Telegram to complete the setup.
+                      <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4 text-xs text-yellow-200 space-y-2">
+                        <p><b>Telegram Setup:</b> Send <code className="bg-slate-800 px-1 py-0.5 rounded text-cyan-300">/start</code> to the bot on Telegram to complete the setup.</p>
+                        <div className="pt-1">
+                          <a
+                            href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'weathergaur_bot'}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 font-bold underline"
+                          >
+                            💬 Click here to open Bot directly
+                          </a>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -315,7 +340,17 @@ export default function UserPortal() {
                 <tbody className="divide-y divide-slate-800/60">
                   {requests.map((req) => (
                     <tr key={req._id} className="hover:bg-slate-900/30 transition">
-                      <td className="py-4 px-4 font-medium text-white">@{req.telegramUsername}</td>
+                      <td className="py-4 px-4 font-medium text-white flex flex-col gap-1 items-start">
+                        <span>@{req.telegramUsername}</span>
+                        <a
+                          href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'weathergaur_bot'}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-0.5"
+                        >
+                          💬 Send /start to Bot
+                        </a>
+                      </td>
                       <td className="py-4 px-4 max-w-xs truncate font-mono text-xs text-slate-400" title={req.reasonForAccess}>
                         {req.reasonForAccess}
                       </td>

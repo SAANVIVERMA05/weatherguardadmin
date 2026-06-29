@@ -106,7 +106,7 @@ export class UsersService {
 
   async linkTelegramChatId(telegramUsername: string, telegramChatId: string): Promise<User | null> {
     const cleanUsername = telegramUsername.replace(/^@/, '');
-    return this.userModel.findOneAndUpdate(
+    const user = await this.userModel.findOneAndUpdate(
       {
         $or: [
           { telegramUsername: cleanUsername },
@@ -118,10 +118,25 @@ export class UsersService {
       {
         telegramChatId,
         notificationsEnabled: true,
+        status: 'approved',
         updatedAt: new Date(),
       },
       { new: true },
     );
+
+    if (user) {
+      try {
+        const AccessRequestModel = (this.userModel as any).db.model('AccessRequest');
+        await AccessRequestModel.updateMany(
+          { clerkId: user.clerkId, status: 'pending' },
+          { status: 'approved', approvedAt: new Date(), updatedAt: new Date() }
+        );
+      } catch (err) {
+        // Fallback if model is not yet initialized/registered
+      }
+    }
+
+    return user;
   }
 
   async enableNotifications(clerkId: string): Promise<User> {

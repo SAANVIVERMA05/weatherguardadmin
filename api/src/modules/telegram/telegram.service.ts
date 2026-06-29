@@ -70,6 +70,54 @@ export class TelegramService {
       ctx.reply('You are subscribed to weather alerts!');
     });
 
+    this.bot.on('text', async (ctx) => {
+      const text = ctx.message.text.trim().toLowerCase();
+
+      // Greetings: "hi", "hello", "hey", or variations
+      if (
+        text === 'hi' ||
+        text === 'hello' ||
+        text === 'hey' ||
+        text.startsWith('hi ') ||
+        text.startsWith('hello ') ||
+        text.startsWith('hey ')
+      ) {
+        await ctx.reply('Hello! How can I help you today?');
+        return;
+      }
+
+      // Weather inquiries
+      if (
+        text.includes('weather') ||
+        text.includes('forecast') ||
+        text.includes('temperature') ||
+        text.includes('rain') ||
+        text.includes('storm') ||
+        text.includes('climate')
+      ) {
+        await ctx.reply(
+          'I can help answer weather-related questions and provide assistance through WeatherGuard Bot. ' +
+          'Administrators will broadcast extreme weather alerts directly to this chat!'
+        );
+        return;
+      }
+
+      // What can you do / bot capabilities
+      if (text.includes('what can you do') || text.includes('what do you do') || text.includes('capabilities') || text.includes('features')) {
+        await ctx.reply('I can help answer weather-related questions and provide assistance through WeatherGuard Bot.');
+        return;
+      }
+
+      // Creator details
+      if (text.includes('who created you') || text.includes('who are you') || text.includes('who is the creator') || text.includes('your creator') || text.includes('who made you')) {
+        await ctx.reply('I am WeatherGuard Bot, designed to assist users with weather-related information and support.');
+        return;
+      }
+
+      // Fallback response for unhandled text
+      await ctx.reply("I'm sorry, I don't have that information right now.");
+    });
+
     this.bot.launch().catch((err) => {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.error(`Failed to launch Telegram Bot: ${msg}`);
@@ -84,25 +132,36 @@ export class TelegramService {
         return;
       }
 
-      const message = `
-🚨 <b>Weather Alert</b>
+      const user = await this.usersService.getUserByClerkId(userClerkId);
+      if (!user) {
+        this.logger.warn(`User with Clerk ID ${userClerkId} not found in database.`);
+        return;
+      }
 
-<b>Title:</b> ${alert.title}
-<b>Severity:</b> ${alert.severity.toUpperCase()}
-<b>Description:</b> ${alert.description}
-${alert.location ? `<b>Location:</b> ${alert.location}` : ''}
-${alert.condition ? `<b>Condition:</b> ${alert.condition}` : ''}
-${alert.temperature ? `<b>Temperature:</b> ${alert.temperature}°C` : ''}
-${alert.windSpeed ? `<b>Wind Speed:</b> ${alert.windSpeed} km/h` : ''}
+      if (!user.telegramChatId) {
+        this.logger.warn(`User ${userClerkId} does not have a linked Telegram Chat ID.`);
+        return;
+      }
 
-Stay safe! ⚠️`;
+      if (!user.notificationsEnabled) {
+        this.logger.log(`Notifications are disabled for user ${userClerkId}.`);
+        return;
+      }
 
-      // This would require storing Telegram chat IDs in the database
-      // For now, we'll log it
-      this.logger.log(`Alert message prepared for user ${userClerkId}:\n${message}`);
+      const message = `🚨 <b>Weather Alert: ${alert.title}</b>\n\n` +
+        `<b>Severity:</b> ${alert.severity.toUpperCase()}\n` +
+        `<b>Description:</b> ${alert.description}\n` +
+        (alert.location ? `<b>Location:</b> ${alert.location}\n` : '') +
+        (alert.condition ? `<b>Condition:</b> ${alert.condition}\n` : '') +
+        (alert.temperature !== undefined ? `<b>Temperature:</b> ${alert.temperature}°C\n` : '') +
+        (alert.windSpeed !== undefined ? `<b>Wind Speed:</b> ${alert.windSpeed} km/h\n` : '') +
+        `\nStay safe! ⚠️`;
+
+      await this.sendMessage(user.telegramChatId, message);
+      this.logger.log(`Alert sent to Telegram user @${user.telegramUsername} (Chat ID: ${user.telegramChatId})`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to send alert: ${message}`);
+      this.logger.error(`Failed to send alert to user ${userClerkId}: ${message}`);
       throw error;
     }
   }
