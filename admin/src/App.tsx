@@ -5,7 +5,12 @@ import PendingRequests from './pages/PendingRequests'
 import ApprovedUsers from './pages/ApprovedUsers'
 import Alerts from './pages/Alerts'
 
-function App() {
+function App({ isClerkConfigured = true }: { isClerkConfigured?: boolean }) {
+  const handleFallbackAuth = (mode: 'sign-in' | 'sign-up') => {
+    const url = mode === 'sign-in' ? 'https://dashboard.clerk.com/sign-in' : 'https://dashboard.clerk.com/sign-up'
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <Router>
       <SignedOut>
@@ -14,20 +19,46 @@ function App() {
             <p className="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300">WeatherGuard Admin</p>
             <h1 className="text-4xl font-semibold">Secure, invite-only weather alerts</h1>
             <p className="mt-4 text-lg text-slate-300">
-              Sign in or create an account to review access requests and manage weather alerts.
+              {isClerkConfigured
+                ? 'Sign in or create an account to review access requests and manage weather alerts.'
+                : 'Clerk is not configured yet, so the embedded sign-in experience is unavailable. Use the buttons below to continue with Clerk setup.'}
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <SignInButton mode="modal">
-                <button className="rounded-lg bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400">
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="rounded-lg border border-cyan-400 px-5 py-3 font-medium text-cyan-300 transition hover:bg-cyan-500/10">
-                  Sign up
-                </button>
-              </SignUpButton>
+              {isClerkConfigured ? (
+                <>
+                  <SignInButton mode="modal">
+                    <button className="rounded-lg bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400">
+                      Sign in
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="rounded-lg border border-cyan-400 px-5 py-3 font-medium text-cyan-300 transition hover:bg-cyan-500/10">
+                      Sign up
+                    </button>
+                  </SignUpButton>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleFallbackAuth('sign-in')}
+                    className="rounded-lg bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => handleFallbackAuth('sign-up')}
+                    className="rounded-lg border border-cyan-400 px-5 py-3 font-medium text-cyan-300 transition hover:bg-cyan-500/10"
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
             </div>
+            {!isClerkConfigured && (
+              <div className="mt-6 rounded-lg border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                Add your Clerk publishable key to admin/.env.local as VITE_CLERK_PUBLISHABLE_KEY to enable the in-app modal flow.
+              </div>
+            )}
           </div>
         </div>
       </SignedOut>
