@@ -60,7 +60,8 @@ Stay safe! ⚠️`;
       // For now, we'll log it
       this.logger.log(`Alert message prepared for user ${userClerkId}:\n${message}`);
     } catch (error) {
-      this.logger.error(`Failed to send alert: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to send alert: ${message}`);
       throw error;
     }
   }
@@ -74,7 +75,8 @@ Stay safe! ⚠️`;
       await this.bot.telegram.sendMessage(chatId, message, { parse_mode: 'HTML' });
       this.logger.log(`Message sent to chat ${chatId}`);
     } catch (error) {
-      this.logger.error(`Failed to send message: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to send message: ${message}`);
       throw error;
     }
   }

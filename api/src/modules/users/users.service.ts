@@ -14,7 +14,7 @@ export class UsersService {
     lastName?: string;
     imageUrl?: string;
   }): Promise<User> {
-    return this.userModel.findOneAndUpdate(
+    const user = await this.userModel.findOneAndUpdate(
       { clerkId: data.clerkId },
       {
         ...data,
@@ -22,6 +22,12 @@ export class UsersService {
       },
       { upsert: true, new: true },
     );
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
   }
 
   async getUserByClerkId(clerkId: string): Promise<User | null> {
@@ -45,7 +51,7 @@ export class UsersService {
   }
 
   async approveUser(userId: string, adminId: string): Promise<User> {
-    return this.userModel.findByIdAndUpdate(
+    const updatedUser = await this.userModel.findByIdAndUpdate(
       userId,
       {
         status: 'approved',
@@ -54,10 +60,16 @@ export class UsersService {
       },
       { new: true },
     );
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   }
 
   async rejectUser(userId: string, reason: string): Promise<User> {
-    return this.userModel.findByIdAndUpdate(
+    const updatedUser = await this.userModel.findByIdAndUpdate(
       userId,
       {
         status: 'rejected',
@@ -66,10 +78,16 @@ export class UsersService {
       },
       { new: true },
     );
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   }
 
   async updateTelegramInfo(clerkId: string, telegramChatId: string, telegramUsername: string): Promise<User> {
-    return this.userModel.findOneAndUpdate(
+    const updatedUser = await this.userModel.findOneAndUpdate(
       { clerkId },
       {
         telegramChatId,
@@ -78,21 +96,39 @@ export class UsersService {
       },
       { new: true },
     );
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   }
 
   async enableNotifications(clerkId: string): Promise<User> {
-    return this.userModel.findOneAndUpdate(
+    const updatedUser = await this.userModel.findOneAndUpdate(
       { clerkId },
       { notificationsEnabled: true },
       { new: true },
     );
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   }
 
   async disableNotifications(clerkId: string): Promise<User> {
-    return this.userModel.findOneAndUpdate(
+    const updatedUser = await this.userModel.findOneAndUpdate(
       { clerkId },
       { notificationsEnabled: false },
       { new: true },
     );
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
   }
 }

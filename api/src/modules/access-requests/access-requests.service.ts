@@ -62,15 +62,16 @@ export class AccessRequestsService {
       { new: true },
     );
 
-    // Update user status
-    if (request) {
-      await this.usersService.approveUser(request.userId.toString(), adminClerkId);
-      await this.usersService.updateTelegramInfo(
-        request.clerkId,
-        '',
-        request.telegramUsername,
-      );
+    if (!request) {
+      throw new Error('Access request not found');
     }
+
+    await this.usersService.approveUser(request.userId.toString(), adminClerkId);
+    await this.usersService.updateTelegramInfo(
+      request.clerkId,
+      '',
+      request.telegramUsername,
+    );
 
     return request;
   }
@@ -90,10 +91,11 @@ export class AccessRequestsService {
       { new: true },
     );
 
-    // Update user status
-    if (request) {
-      await this.usersService.rejectUser(request.userId.toString(), rejectionReason);
+    if (!request) {
+      throw new Error('Access request not found');
     }
+
+    await this.usersService.rejectUser(request.userId.toString(), rejectionReason);
 
     return request;
   }
