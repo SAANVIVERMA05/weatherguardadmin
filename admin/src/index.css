@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '@clerk/ui/themes/shadcn.css';
 
 * {
   margin: 0;

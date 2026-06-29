@@ -104,6 +104,26 @@ export class UsersService {
     return updatedUser;
   }
 
+  async linkTelegramChatId(telegramUsername: string, telegramChatId: string): Promise<User | null> {
+    const cleanUsername = telegramUsername.replace(/^@/, '');
+    return this.userModel.findOneAndUpdate(
+      {
+        $or: [
+          { telegramUsername: cleanUsername },
+          { telegramUsername: '@' + cleanUsername },
+          { telegramUsername: cleanUsername.toLowerCase() },
+          { telegramUsername: '@' + cleanUsername.toLowerCase() }
+        ]
+      },
+      {
+        telegramChatId,
+        notificationsEnabled: true,
+        updatedAt: new Date(),
+      },
+      { new: true },
+    );
+  }
+
   async enableNotifications(clerkId: string): Promise<User> {
     const updatedUser = await this.userModel.findOneAndUpdate(
       { clerkId },

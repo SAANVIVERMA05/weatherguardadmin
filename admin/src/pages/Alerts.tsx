@@ -19,28 +19,38 @@ interface Alert {
 export default function Alerts() {
   const { getToken } = useAuth()
   const [alerts, setAlerts] = useState<Alert[]>([])
+  const [approvedUsers, setApprovedUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedUserIndex, setSelectedUserIndex] = useState<string>('')
   const [newAlert, setNewAlert] = useState({
     title: '',
     description: '',
     severity: 'alert' as const,
     location: '',
+    temperature: 20,
+    condition: 'Clear',
+    windSpeed: 5,
   })
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    fetchAlerts()
+    fetchAlertsAndUsers()
   }, [getToken])
 
-  const fetchAlerts = async () => {
+  const fetchAlertsAndUsers = async () => {
     try {
       const token = await getToken()
-      const response = await axios.get('/api/alerts', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      setAlerts(response.data)
+      const headers = { Authorization: `Bearer ${token}` }
+      
+      const [alertsRes, usersRes] = await Promise.all([
+        axios.get('/api/alerts', { headers }),
+        axios.get('/api/users/approved', { headers }),
+      ])
+      
+      setAlerts(alertsRes.data)
+      setApprovedUsers(usersRes.data)
     } catch (error) {
-      console.error('Failed to fetch alerts:', error)
+      console.error('Failed to fetch data:', error)
     } finally {
       setLoading(false)
     }
@@ -48,9 +58,22 @@ export default function Alerts() {
 
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (selectedUserIndex === '') {
+      alert('Please select a target user for the weather alert.')
+      return
+    }
+
+    const targetUser = approvedUsers[parseInt(selectedUserIndex, 10)]
+    if (!targetUser) return
+
     try {
       const token = await getToken()
-      const response = await axios.post('/api/alerts/create', newAlert, {
+      const payload = {
+        ...newAlert,
+        userId: targetUser._id,
+        userClerkId: targetUser.clerkId,
+      }
+      const response = await axios.post('/api/alerts/create', payload, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setAlerts([response.data, ...alerts])
@@ -59,9 +82,13 @@ export default function Alerts() {
         description: '',
         severity: 'alert',
         location: '',
+        temperature: 20,
+        condition: 'Clear',
+        windSpeed: 5,
       })
+      setSelectedUserIndex('')
       setShowForm(false)
-      alert('Alert created successfully!')
+      alert('Alert created and scheduled successfully!')
     } catch (error) {
       console.error('Failed to create alert:', error)
       alert('Failed to create alert')
@@ -103,6 +130,22 @@ export default function Alerts() {
           className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 space-y-4"
         >
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Target Approved User</label>
+            <select
+              value={selectedUserIndex}
+              onChange={(e) => setSelectedUserIndex(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required
+            >
+              <option value="">-- Select Approved User --</option>
+              {approvedUsers.map((user, idx) => (
+                <option key={user._id} value={idx}>
+                  {user.firstName ? `${user.firstName} ${user.lastName}` : user.email} (@{user.telegramUsername})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
             <input
               type="text"
@@ -141,6 +184,36 @@ export default function Alerts() {
                 type="text"
                 value={newAlert.location}
                 onChange={(e) => setNewAlert({ ...newAlert, location: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Temperature (°C)</label>
+              <input
+                type="number"
+                value={newAlert.temperature}
+                onChange={(e) => setNewAlert({ ...newAlert, temperature: parseInt(e.target.value, 10) || 0 })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+              <input
+                type="text"
+                value={newAlert.condition}
+                onChange={(e) => setNewAlert({ ...newAlert, condition: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Sunny, Stormy"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Wind Speed (km/h)</label>
+              <input
+                type="number"
+                value={newAlert.windSpeed}
+                onChange={(e) => setNewAlert({ ...newAlert, windSpeed: parseInt(e.target.value, 10) || 0 })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

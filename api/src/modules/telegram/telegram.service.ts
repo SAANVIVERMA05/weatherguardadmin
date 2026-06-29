@@ -1,30 +1,68 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Telegraf } from 'telegraf';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class TelegramService {
   private bot: Telegraf;
   private logger = new Logger(TelegramService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private usersService: UsersService,
+  ) {
     const botToken = this.configService.get('TELEGRAM_BOT_TOKEN');
-    if (botToken) {
-      this.bot = new Telegraf(botToken);
-      this.initializeBot();
+    const isPlaceholder = !botToken || botToken === '<YOUR_TELEGRAM_BOT_TOKEN>' || botToken.startsWith('<');
+    
+    if (!isPlaceholder) {
+      try {
+        this.bot = new Telegraf(botToken);
+        this.initializeBot();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Failed to initialize Telegram Bot: ${msg}`);
+      }
+    } else {
+      this.logger.warn('Telegram Bot Token is not configured or is using a placeholder. Bot features will be disabled.');
     }
   }
 
   private initializeBot() {
-    this.bot.start((ctx) => {
-      ctx.reply(
-        'Welcome to Weather Alert Bot! 🌤️\n\nUse /help to see available commands.',
+    this.bot.start(async (ctx) => {
+      const username = ctx.from?.username;
+      const chatId = ctx.chat?.id.toString();
+      
+      this.logger.log(`Telegram Bot started by user: ${username} (Chat ID: ${chatId})`);
+
+      if (username) {
+        try {
+          const linkedUser = await this.usersService.linkTelegramChatId(username, chatId);
+          if (linkedUser) {
+            await ctx.reply(
+              `Welcome to WeatherGuard! 🌤️\n\nYour Telegram account (@${username}) has been successfully linked.\n` +
+              `Status: ${linkedUser.status.toUpperCase()}\n\n` +
+              (linkedUser.status === 'approved' 
+                ? 'You are active and will receive weather alerts here.' 
+                : 'Your request is pending administrator approval. We will notify you once approved.')
+            );
+            return;
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Error linking Telegram username @${username}: ${msg}`);
+        }
+      }
+
+      await ctx.reply(
+        `Welcome to WeatherGuard! 🌤️\n\nWe couldn't automatically match your Telegram username${username ? ` (@${username})` : ''} to a registered user.\n\n` +
+        `Please make sure you have signed up on the Web Dashboard and entered your Telegram username under the 'Request Access' form.`
       );
     });
 
     this.bot.help((ctx) => {
       ctx.reply(
-        `Available commands:\n/start - Start the bot\n/status - Check your subscription status\n/help - Show this help message`,
+        `Available commands:\n/start - Start the bot and link account\n/status - Check your subscription status\n/help - Show this help message`,
       );
     });
 
@@ -32,7 +70,10 @@ export class TelegramService {
       ctx.reply('You are subscribed to weather alerts!');
     });
 
-    this.bot.launch();
+    this.bot.launch().catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to launch Telegram Bot: ${msg}`);
+    });
     this.logger.log('Telegram bot initialized');
   }
 

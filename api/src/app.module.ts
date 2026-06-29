@@ -16,7 +16,11 @@ import { TelegramModule } from './modules/telegram/telegram.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/weatherguard'),
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+        uri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/weatherguard',
+      }),
+    }),
     ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,

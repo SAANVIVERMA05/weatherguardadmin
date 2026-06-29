@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/pages/Alerts.tsx","./src/pages/ApprovedUsers.tsx","./src/pages/Dashboard.tsx","./src/pages/PendingRequests.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/pages/alerts.tsx","./src/pages/approvedusers.tsx","./src/pages/dashboard.tsx","./src/pages/pendingrequests.tsx","./src/pages/userportal.tsx"],"version":"5.9.3"}

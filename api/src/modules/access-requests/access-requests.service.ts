@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AccessRequest } from './schemas/access-request.schema';
 import { UsersService } from '../users/users.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class AccessRequestsService {
+  private logger = new Logger(AccessRequestsService.name);
+
   constructor(
     @InjectModel(AccessRequest.name) private accessRequestModel: Model<AccessRequest>,
     private usersService: UsersService,
+    private telegramService: TelegramService,
   ) {}
 
   async createAccessRequest(data: {
@@ -67,11 +71,27 @@ export class AccessRequestsService {
     }
 
     await this.usersService.approveUser(request.userId.toString(), adminClerkId);
-    await this.usersService.updateTelegramInfo(
+    const updatedUser = await this.usersService.updateTelegramInfo(
       request.clerkId,
       '',
       request.telegramUsername,
     );
+
+    // If the user has already linked their Telegram bot chat ID, notify them immediately!
+    const userProfile = await this.usersService.getUserByClerkId(request.clerkId);
+    if (userProfile && userProfile.telegramChatId) {
+      try {
+        await this.telegramService.sendMessage(
+          userProfile.telegramChatId,
+          `🎉 <b>Access Request Approved!</b>\n\nYour access request to WeatherGuard has been approved by an administrator!\n\n` +
+          (approvalNotes ? `<b>Admin Notes:</b> ${approvalNotes}\n\n` : '') +
+          `You will now receive weather alerts automatically. Stay safe! 🌤️`
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Failed to send approval message to Telegram Chat ID ${userProfile.telegramChatId}: ${msg}`);
+      }
+    }
 
     return request;
   }

@@ -50,4 +50,14 @@ export class UsersController {
   ) {
     return this.usersService.updateTelegramInfo(clerkId, data.telegramChatId, data.telegramUsername);
   }
+
+  @Put('notifications/enable/:clerkId')
+  async enableNotifications(@Param('clerkId') clerkId: string) {
+    return this.usersService.enableNotifications(clerkId);
+  }
+
+  @Put('notifications/disable/:clerkId')
+  async disableNotifications(@Param('clerkId') clerkId: string) {
+    return this.usersService.disableNotifications(clerkId);
+  }
 }
